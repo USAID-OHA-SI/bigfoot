@@ -21,7 +21,7 @@ prinf <- function(df) {
 #----------------------------------------------------------------
 # read in data
 
-df <- read_csv("C:/Users/Josh/Documents/data/fy20_q1_v2/scm/SC-FACT Data 2019-01 to 2020-01/SC-FACT Data 2019-01 to 2020-01.csv") %>% 
+#df <- read_csv("C:/Users/Josh/Documents/data/fy20_q1_v2/scm/SC-FACT Data 2019-01 to 2020-01/SC-FACT Data 2019-01 to 2020-01.csv") %>% 
   rename_all(tolower(.))
 
 df <- vroom("C:/Users/Josh/Documents/data/fy20_q1_v2/scm/SC-FACT Data 2019-01 to 2020-01/SC-FACT Data 2019-01 to 2020-01.csv") %>% 
@@ -35,11 +35,8 @@ distinct(df, country)
 df <- df %>% 
   gather(indicator, value, soh:mos, na.rm = TRUE)
 
-## check cameroon
+## check some things
 
-df %>% 
-  filter(country == "Cameroon") %>% 
-  
 
 df %>% 
   group_by(period, country, indicator) %>%
@@ -47,11 +44,21 @@ df %>%
   pivot_wider(names_from = period, values_from = value) %>% 
   write_csv(file.path(data_out, "sc_fact_summary.csv"))
 
+df %>% 
+  group_by(period, country, indicator) %>%
+  summarise(value = sum(value)) %>% 
+  pivot_wider(names_from = period, values_from = value) %>% 
+  write_csv(file.path(data_out, "sc_fact_summary.csv"))
 
+#look at product and productcategory
+df %>% 
+  distinct(productcategory, product) %>%
+  arrange(productcategory) %>% 
+  prinf()
 
+# look at where datimuid is missing
 
-
-
+df %>% n_distinct(na.rm = TRUE)
 
 
 

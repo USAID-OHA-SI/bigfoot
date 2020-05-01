@@ -1,5 +1,5 @@
-## PROJECT:  find your beach
-## AUTHOR:   T.Essam | USAID
+## PROJECT:  bigfoot
+## AUTHOR:   jdavis | USAID
 ## LICENSE:  MIT
 ## PURPOSE:  structure project folders
 
