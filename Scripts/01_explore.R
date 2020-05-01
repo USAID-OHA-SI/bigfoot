@@ -57,9 +57,29 @@ df %>%
   prinf()
 
 # look at where datimuid is missing
+# How many facilities have a datimuid by OU
+df %>%
+  group_by(country) %>%
+  summarise(unqiue_code = n_distinct(datimcode))
+ 
+df %>%
+  group_by(country) %>%
+  summarise(unqiue_code = n_distinct(`datim facility`))
 
-df %>% n_distinct(na.rm = TRUE)
+df %>%
+  group_by(country) %>%
+  summarise(unqiue_code = n_distinct(facility_mapped))
 
+# any rows missing 'product'?
+df %>% 
+  group_by(country) %>% 
+  summarise(unqiue_code = n_distinct(product))
+
+## facilityCD and Datimuid
+df %>% 
+  group_by(country) %>% 
+  summarise(unqiue_facilitycd = n_distinct(facilitycd),
+            unique_datimcode = n_distinct(datimcode))
 
 
 
