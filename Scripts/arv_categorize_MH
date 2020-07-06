@@ -1,0 +1,197 @@
+#PLAN:
+#1. Import SC-FACT Data
+#2. Filter for ARVS only
+#3. Create Pill COunt variable
+#4. Create MOT variable
+#5. Create AMI_MOT variable
+#6. Categorize ARVS in TLD, TLE, Other
+#7. Create graph to show AMI of each ARV by country
+
+library(tidyverse)
+
+#IMPORT SC-FACT Data from March 2020
+data <- read.csv("C:/Users/mhartig/Documents/SC_FACT/2020-03_SC-FACT_Data.csv")
+View(data)
+glimpse(data)
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"Observations: 959,413
+Variables: 15
+$ ï..Country      <fct> Angola, Angola, Ang...
+$ Period          <fct> 2019-03, 2019-03, 2...
+$ SNL1            <fct> Luanda, Luanda, Lua...
+$ SNL2            <fct> Maianga, Rangel, Ma...
+$ FacilityCD      <fct> , , , , , , , , , ,...
+$ Facility        <fct> DIVINA PROVIDÃŠNCIA...
+$ DATIMCode       <lgl> NA, NA, NA, NA, NA,...
+$ DATIM.Facility  <lgl> NA, NA, NA, NA, NA,...
+$ ProductCategory <fct> ARV, ARV, ARV, ARV,...
+$ Product         <fct> Abacavir/Lamivudin...
+$ SOH             <dbl> 33, 508, 288, 86, 6...
+$ AMI             <fct> 0, 156, 54, 46, 427...
+$ MOS             <dbl> NA, 3.2564103, 5.33...
+$ Facility_mapped <fct> , , , , , , , , , ,...
+$ Source          <fct> , , , , , , , , , ,..."
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#1. Filter for ARVS only and remove extraneous variables
+
+distinct(data, ProductCategory)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"ProductCategory
+1              ARV
+2              RTK
+3           Condom
+4               TB
+5    Pediatric ARV
+6        Adult ARV
+7          Condoms
+8              TPT
+9             <NA>"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+data2 <- data%>%
+select(-Facility_mapped, -Source)%>%
+  filter(ProductCategory %in% c("ARV", "Pediatric ARV", "Adult ARV")) 
+
+  data2%>%
+    glimpse()%>%
+    count(ProductCategory)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"  ProductCategory      n
+  <fct>            <int>
+1 Adult ARV          550
+2 ARV             697678
+3 Pediatric ARV       38"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#2. Create Pill Count Variable variable
+
+    data2 <- data%>%
+    select(-Facility_mapped, -Source)%>%
+    filter(ProductCategory %in% c("ARV", "Pediatric ARV", "Adult ARV"))
+
+  data2%>%
+    distinct(Product)
+  
+data3 <- data2%>%
+    mutate(PillCount  = case_when(grepl("30 Tabs", Product) ~ 30,
+                                  grepl("60 Tabs", Product) ~ 60,
+                                  grepl("90 Tabs", Product) ~ 90,
+                                  grepl("90 Caps", Product) ~ 90,
+                                  grepl("120 Tabs", Product) ~ 120,
+                                  grepl("120 Caps", Product) ~ 120,
+                                  grepl("180 Tabs", Product) ~ 180 ))
+data3%>%
+  glimpse()
+    
+#Check pillcount variable
+data3%>%
+  count(PillCount) 
+"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  PillCount      n
+<dbl>  <int>
+  1        30 314974
+2        60 245915
+3        90  24581
+4       120  51235
+5       180    349
+6        NA  61212
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+
+#Check if any "NA" values can be further categorized
+data3%>%
+ filter(is.na(PillCount))%>%
+ distinct(Product)
+"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Product
+1                     Zidovudine 10 mg/mL Solution, 100 mL bottle
+2                 Nevirapine  10 mg/mL, Suspension, 240 mL bottle
+3          Lopinavir/ritonavir 80/20 mg/mL Solution, 60 mL bottle
+4                               Abacavir/Lamivudine 120/60 mg/tab
+5                    Atazanavir/ Ritonavir 300/100mg /Tabs Bte/30
+6                                    Lopinavir/ ritonavir 40/10mg
+7  TÃ©nofovir/ Lamivudine/ Efavirenz  300/300/600 mg /Tabs Bte/30
+8     Zidovudine/ Lamivudine/ NÃ©virapine 60/30/50mg /Tabs Bte/60
+9                                                  LPV/r 80/20 mg
+10                       Lopinavir/ritonavir 80/20 mg/mL Solution
+11                                          Isoniazid (INH) 300mg
+12                                 Nevirapine suspension 10mg/ml 
+13                                      Atazanavir 300 mg Capsule
+14                                        Ritonavir 100 mg Tablet
+15                  Nevirapine 10 mg/mL Suspension, 100 mL bottle
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+
+#4. Create MOT variable
+
+data4 <- data3%>%
+  mutate(MOT = case_when(PillCount == "30"~ 1,
+                         PillCount == "60"~ 1,
+                         PillCount == "90"~ 3,
+                         PillCount == "120"~ 1,
+                         PillCount == "180"~ 6,))
+
+  data4%>%
+    group_by(MOT)%>%
+    count(PillCount)
+
+#5. Create AMI MOT Variable
+  
+  data%>%
+    distinct(AMI)
+  
+ data5 <-  data4%>%
+    mutate(AMI_MOT = as.numeric(as.character(AMI))*MOT)
+ 
+ data5%>%
+   filter(is.na(AMI))
+ "<0 rows> (or 0-length row.names)"
+ 
+ #6. Categorize ARVS in TLD, TLE, Other
+ 
+data5%>%
+  distinct(Product)
+
+data_final <- data5%>%
+  mutate(ARVcategory  = case_when(grepl("Dolutegravir/Lamivudine/Tenofovir", Product) ~ "TLD",
+                                  grepl("Efavirenz/Lamivudine/Tenofovir", Product) ~"TLE", 
+                                  grepl("TÃ©nofovir/ Lamivudine/ Efavirenz", Product) ~ "TLE",
+                                  TRUE ~ "other" ))
+   
+#Check other category to make sure didn't miss anything with a different spelling
+data_final%>%
+  filter(ARVcategory == "other")%>%
+  distinct(Product)
+ 
+view(data_final)
+glimpse(data_final)
+data_final <- data_final%>%
+  rename(Country = ï..Country)
+
+glimpse(data_final)
+  
+
+#Look at data
+ggplot(data_final)+
+  geom_bar(stat = "identity", aes(ARVcategory, AMI_MOT))+
+  facet_wrap(~Country)+aes(fill=ARVcategory)
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
