@@ -13,23 +13,20 @@ library(tidyverse)
 library(vroom)
 library(readxl)
 library(fs)
+library(glitr)
+library(glamr)
 
 
 #Globals----------------------------------------------------------
 data_in <- "data"
-data_out <- "C:/Users/Josh/Documents/data/fy20_q2_v1/psm/data"
-images <- "Images"
+data_out <- "Dataout"
+x_files <- "C:/Users/Josh/Documents/GitHub/bigfoot/data/xwalk"
 
-prinf <- function(df) {
-  print(df, n = Inf)
-}
 
 #read in and munge-----------------------------------------------
 
-#list files
-files <- list.files(data_in, ".xlsx", full.names = TRUE)
-
-#delete
+#list all the crosswalk files
+files <- list.files(x_files, "*.xlsx", full.names = TRUE)
 
 #function to stitch together and fix
 stitch_xwalk <- function(file){
@@ -37,7 +34,7 @@ stitch_xwalk <- function(file){
   df <- read_xlsx(file,
                   sheet = "Mapped Facilities v2",
                   col_types = c("text")) %>%
-    mutate(ou = basename(file)) %>% 
+    mutate(country = basename(file)) %>% 
     rename_all(~tolower(.))
   
     return(df)
@@ -51,32 +48,48 @@ df_cross <- map_dfr(.x = files,
 ## clean up, fix ou
 
 xwalk <- df_cross %>% 
-  mutate(ou = str_remove(ou, " LMIS MER Mapping v2.xlsx")) %>% 
+  mutate(country = str_remove(country, " LMIS MER Mapping v2.xlsx")) %>% 
   select(-`...7`) %>%
   rename(threshold = `similarity threshold`) %>%
-  mutate(across((c("similarity", "threshold")), as.numeric(vars)))
+  mutate_at(vars("similarity", "threshold"), as.numeric)
 
-  group_by(ou) %>% 
-  fill(threshold, .direction = "updown") %>% 
-  ungroup()
+## prepare to join to sc_fact, keeping only vars of interest
+xwalk <- xwalk %>%
+  select(country, snl1, snl2, facility, sitename, country) %>% 
+  mutate_all(~tolower(.))
 
-## examine
+
+#examine/scratch---------------------------------------------------------
 
 # how many obs have a 0 value for similarity, ie they didn't match
 xwalk %>% 
-  group_by(ou) %>% 
+  group_by(country) %>% 
   tally(similarity == "0")
+  
+xwalk %>% 
+  count(ou)
 
 #how many have a non-missing orgunituid, meaning they did match
 xwalk %>% 
-  group_by(ou) %>% 
+  group_by(country) %>% 
   tally(!is.na(orgunituid))
 
+##look for missing characters
+utf8::utf8_print(unique(xwalk$facility), utf8 = FALSE)
+
+utf8::utf8_print(unique(xwalk$sitename), utf8 = FALSE)
 
 
-#write
-df_cross %>%
-  write_csv(file.path(data_out, "lmis_mer_crosswalk_all.csv"))
+#read in psm-MER data-----------------------------------------------
+
+df_mer <- read_csv("C:/Users/Josh/Documents/data/fy20_q1_v1/scm_output")
+
+df_mer <- read_csv("../../data/fy20_q1_v1/scm_output/mer_fy20_q1_v1_site_scm.csv")
+
+
+
+
+
 
 ##
 

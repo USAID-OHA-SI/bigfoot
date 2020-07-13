@@ -11,38 +11,33 @@ library(vroom)
 
 #Globals----------------------------------------------------------
 data_in <- "Data"
-data_out <- "C:/Users/Josh/Documents/data/fy20_q1_v2/scm/SC-FACT Data 2019-01 to 2020-01"
+data_out <- "Dataout"
 images <- "Images"
 
-prinf <- function(df) {
-  print(df, n = Inf)
-}
 
 #----------------------------------------------------------------
-# read in data
+# read in data SC_FACT data
 
-#df <- read_csv("C:/Users/Josh/Documents/data/fy20_q1_v2/scm/SC-FACT Data 2019-01 to 2020-01/SC-FACT Data 2019-01 to 2020-01.csv") %>% 
-  rename_all(tolower(.))
-
-df <- vroom("C:/Users/Josh/Documents/data/fy20_q1_v2/scm/SC-FACT Data 2019-01 to 2020-01/SC-FACT Data 2019-01 to 2020-01.csv") %>% 
+df <- file.path(data_in, "2020-04_SC_FACT_Data.csv") %>% 
+  vroom() %>% 
   rename_all(~tolower(.))
 
-glimpse(df)
 
-distinct(df, country)
-
-#create indicator field
-df <- df %>% 
+#reshape long and create indicator field
+df_long <- df %>% 
   gather(indicator, value, soh:mos, na.rm = TRUE)
 
+
+
+#generic checks/scratch------------------------------------------
 ## check some things
 
 
-df %>% 
+df_long %>% 
   group_by(period, country, indicator) %>%
   summarise(value = sum(value)) %>% 
   pivot_wider(names_from = period, values_from = value) %>% 
-  write_csv(file.path(data_out, "sc_fact_summary.csv"))
+  write_csv(file.path(data_out, "sc_fact_summary_2020_03.csv"))
 
 df %>% 
   group_by(period, country, indicator) %>%
@@ -51,35 +46,86 @@ df %>%
   write_csv(file.path(data_out, "sc_fact_summary.csv"))
 
 #look at product and productcategory
-df %>% 
+df_long %>% 
+  filter(country == "Haiti",
+         indicator == "soh") %>% 
   distinct(productcategory, product) %>%
   arrange(productcategory) %>% 
   prinf()
 
 # look at where datimuid is missing
 # How many facilities have a datimuid by OU
-df %>%
-  group_by(country) %>%
-  summarise(unqiue_code = n_distinct(datimcode))
+df_long_old %>%
+  group_by(country, period) %>%
+  summarise(unqiue_code = n_distinct(datimcode)) %>% prinf()
  
-df %>%
+df_long_old %>%
   group_by(country) %>%
   summarise(unqiue_code = n_distinct(`datim facility`))
 
-df %>%
-  group_by(country) %>%
-  summarise(unqiue_code = n_distinct(facility_mapped))
-
 # any rows missing 'product'?
-df %>% 
-  group_by(country) %>% 
-  summarise(unqiue_code = n_distinct(product))
+df_long %>%
+  filter(indicator == "ami") %>% 
+  group_by(country, period) %>% 
+  summarise(unqiue_code = n_distinct(product)) %>% 
+  spread(period, unqiue_code)
+
+#angola only
+df_long %>%
+  filter(indicator == "ami",
+         country == "Angola",
+         productcategory == "ARV") %>% 
+  group_by(product, period) %>% 
+  summarise(unqiue_code = n_distinct(product)) %>% 
+  spread(period, unqiue_code) %>% prinf()
+
+df_long %>%
+  filter(indicator == "soh") %>% 
+  group_by(country, period) %>% 
+  summarise(unqiue_code = n_distinct(product)) %>% 
+  spread(period, unqiue_code)
 
 ## facilityCD and Datimuid
-df %>% 
+df_long %>%
+  filter(indicator == "ami") %>% 
   group_by(country) %>% 
   summarise(unqiue_facilitycd = n_distinct(facilitycd),
             unique_datimcode = n_distinct(datimcode))
 
+## look at soh
+df_long %>%
+  filter(indicator == "soh",
+         period == "2019-03") %>% 
+  group_by(country, period) %>% 
+  summarise(value = sum(value)) %>%
+  write_csv(file.path(data_out, "2020_03_fac_soh.csv"))
+
+
+df_long %>% 
+  group_by(country, period, indicator) %>% 
+  summarise(value = sum(value))
+  
+# facilty count
+df %>%
+  group_by(country, period) %>%
+  summarise(unqiue_code = n_distinct(facility, na.rm = TRUE)) %>%
+  arrange(country, period) %>%
+  spread(period, unqiue_code)
+  write_csv(file.path(data_out, "2020_03_site_count.csv"))
+
+  
+  df_long %>% 
+    filter(country == "Uganda") %>% 
+    distinct(facility)
+
+  
+  
+  # any rows missing 'product'?
+  df_long %>%
+    filter(indicator == "ami",
+           country == "Zambia") %>% 
+    group_by(product, period) %>% 
+    summarise(unqiue_code = n_distinct(product)) %>% 
+    spread(period, unqiue_code) %>% prinf()
 
 
