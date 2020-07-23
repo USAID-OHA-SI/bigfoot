@@ -4,9 +4,14 @@
 ## PURPOSE:  structure project folders
 ## DETAIL :  inital exploratory look at LMIS data
 
-#Dependancies-----------------------------------------------------
+#Dependencies-----------------------------------------------------
 library(tidyverse)
 library(vroom)
+library(readxl)
+library(fs)
+library(glitr)
+library(glamr)
+library(ICPIutilities)
 
 
 #Globals----------------------------------------------------------
@@ -18,16 +23,16 @@ images <- "Images"
 #----------------------------------------------------------------
 # read in data SC_FACT data
 
-df <- file.path(data_in, "2020-04_SC_FACT_Data.csv") %>% 
+df <- file.path(data_in, "2020-04_SC-FACT_Data.csv") %>% 
   vroom() %>% 
   rename_all(~tolower(.))
 
 
 #reshape long and create indicator field
-df_long <- df %>% 
-  gather(indicator, value, soh:mos, na.rm = TRUE)
+#df_long <- df %>% 
+  #gather(indicator, value, soh:mos, na.rm = TRUE)
 
-
+#clean up workspace----------------------------------------------
 
 #generic checks/scratch------------------------------------------
 ## check some things
