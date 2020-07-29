@@ -34,7 +34,7 @@ indc <- c("TX_CURR", "TX_NEW")
 # 
 # df_mer_raw %>% write_csv(file.path(data_out, "2020_tx_sc_mer.csv"))
 
-df_mer_raw <- read_csv(file.path(data_out, "2020_tx_sc_mer.csv"))
+df_mer_raw <- vroom::vroom(file.path(data_out, "2020_tx_sc_mer.csv"))
 
 #clean up
 df_mer <- df_mer_raw %>%
@@ -59,25 +59,34 @@ df_mer <- df_mer %>%
 df_mer_w <- df_mer %>% 
   spread(indicator, value)
 
-df_xwalked_w <- df_xwalked %>%
+df_long_dedup_w <- df_regimen %>% 
   select(-period) %>% 
   spread(indicator, value)
 
+# df_xwalked_w <- df_xwalked %>%
+#   select(-period) %>% 
+#   spread(indicator, value)
 
 
-#join-----------------------------------------------------------------------
+#join xwalk to mer--------------------------------------------------------------
 
-#create a list of each ou's df
-df_list <- df_xwalked %>% 
-  group_split(country) 
+# #create a list of each ou's df
+# df_list <- df_xwalked %>% 
+#   group_split(country) 
+# 
+# #map(df_list, ~left_join(., xwalk, by = c("facility", "country")))
+# 
+# df_sch_mer  <- map_dfr(df_list, ~left_join(., df_mer))
 
-#map(df_list, ~left_join(., xwalk, by = c("facility", "country")))
+df_mer_w <- df_mer_w %>% 
+  left_join(xwalk)
 
-df_sch_mer  <- map_dfr(df_list, ~left_join(., df_mer))
+df_sch_mer <- df_mer_w %>% 
+  left_join(df_long_dedup_w)
 
+#write
 
-tmp <- left_join(df_xwalked, df_mer)
-
+df_sch_mer %>% write_csv(file.path(data_out, "mer_sch_combo_wide.csv"))
 
 #examine/scratch-------------------------------------------------------------
 

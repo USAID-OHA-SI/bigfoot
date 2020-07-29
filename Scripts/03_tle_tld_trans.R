@@ -118,6 +118,14 @@ df_long_dedup <- df_long_dedup %>%
 # Check if our filter worked
 dim(df_long)[1] - dim(df_long_dedup)[1]
 
+##  7.28.20
+##  collapse on regime_type
+
+df_regimen <- df_long_dedup %>% 
+  group_by(country, period, snl1, snl2, facility, regimen_type, indicator) %>% 
+  summarise(value = round(sum(value, na.rm = TRUE),0)) %>% 
+  filter(value !=0)
+
 
 ## df_long now has all the thigns we want to merge
 ## join on the 'sitename' which is the datim site name from the crosswalked files
