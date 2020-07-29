@@ -53,11 +53,13 @@ arvs <- c("Abacavir 300 mg, Tablet, 60 Tabs",
 
 
 #read in data----------------------------------------------------
+# read in data SC_FACT data
+
+df <- file.path(data_in, "2020-04_SC-FACT_Data.csv") %>% 
+  vroom() %>% 
+  rename_all(~tolower(.))
 
 ## first read in file that adds mot, etc..
-
-df_prods <- read_excel(file.path(data, "triangulation_meta/Data Triang. & DDC Next Steps - Action Plan.xlsx"),
-                       sheet = "regimen_pill_count")
 
 df_prods <- file.path(data_in, "Data Triang. & DDC Next Steps - Action Plan.xlsx") %>% 
   read_excel(sheet = "regimen_pill_count") %>% 
@@ -67,7 +69,8 @@ df_prods <- file.path(data_in, "Data Triang. & DDC Next Steps - Action Plan.xlsx
 ## filter SC_fact data to just arvs in arvs
 
 df <- df %>% 
-  filter(product %in% arvs)
+  filter(product %in% arvs,
+         country != "Cameroon")
 
 ##join products and sc_fact
 
@@ -88,22 +91,101 @@ df_long <- df_merged %>%
   gather(indicator, value, colnames(select_if(., is.numeric)), na.rm = TRUE) %>% 
   select(-facilitycd, -datimcode, -facility_mapped, -source, -`datim facility`) %>% 
   filter(!is.na(regimen_type)) %>%
-  mutate_all(~tolower(.))
+  mutate_at(vars(country, facility), ~tolower(.))
+
+# Check for duplicates, flag those groups with more than 1 unique rows, then filter
+# to remove the duplicates so we get a better merge
+df_long <- 
+  df_long %>% 
+  group_by(facility, country, period, product, indicator, value) %>% 
+  mutate(n = n(),
+         dup_flag = row_number()) %>% 
+  ungroup()
+
+
+df_long %>% filter(n > 1) %>% View()
+
+#remove duplicate obs
+df_long_dedup <- df_long %>% filter(n ==1)
+
+df_long_dedup %>% filter(n > 1) %>% View()
+
+#remove flags
+df_long_dedup <- df_long_dedup %>% 
+  select(-n, -dup_flag)
+
+
+# Check if our filter worked
+dim(df_long)[1] - dim(df_long_dedup)[1]
+
+##  7.28.20
+##  collapse on regime_type
+
+df_regimen <- df_long_dedup %>% 
+  group_by(country, period, snl1, snl2, facility, regimen_type, indicator) %>% 
+  summarise(value = round(sum(value, na.rm = TRUE),0)) %>% 
+  filter(value !=0)
+
 
 ## df_long now has all the thigns we want to merge
 ## join on the 'sitename' which is the datim site name from the crosswalked files
 ## 'facility' from SC_FACT is capitalized in some cases
 
-df_xwalked <- left_join(df_long, xwalk, by = c("country", "snl1", "snl2", "facility"))
+  df_xwalked <- left_join(df_long_dedup, xwalk)
+
+
+
+#merge take 2, vectorized---------------------------------------------------------
+# #try using map to do each ou at a time
+# 
+# #create a list of each ou's df
+#   df_list <- df_long_dedup %>%
+#     group_split(country)
+# 
+#   df_xwalked  <- map_dfr(df_list, ~left_join(., xwalk, by = c("facility", "country")))
+
+# check merged file for duplicates
+dup_check <- df_xwalked %>% 
+  group_by(country, facility, product, indicator, value) %>% 
+  mutate(n = n(),
+         dup_flag = row_number()) %>% 
+  ungroup()
+
+#examine
+dup_check %>% filter(n > 1) %>% View()
+
+#clean up for merging w MER
+
+df_xwalked <- df_xwalked %>% 
+  select(-snl1, -snl2) %>% 
+  mutate(value = as.numeric(value))
+
+
+
+
 
 #clean up workspace-------------------------------------------------------------------
-rm(df, df_prods, df_cross)
+rm(df_prods, df_list, df_long, df_merged, dup_check)
 
 #examine/scratch----------------------------------------------------------------------
 #check out angola
 
+map(list(df_long, xwalk), ~glimpse(.))
+intersect(unique(df_long$facility), unique(xwalk$facility)) %>% length()
+
+
+map(df_long %>% select(contains("snl")), ~sum(is.na(.)))
+
+map(xwalk, ~sum(is.na(.)))
+
 #the 'joined' file
-df_xwalked %>%
+  df_xwalked %>%
+    filter(country == "angola") %>%
+    distinct(facility, sitename) %>%
+    arrange(facility) %>% 
+    prinf()
+
+test1 %>%
   filter(country == "angola") %>%
   distinct(facility, sitename) %>%
   arrange(facility) %>% 
