@@ -27,10 +27,14 @@ df <- file.path(data_in, "2020-04_SC-FACT_Data.csv") %>%
   vroom() %>% 
   rename_all(~tolower(.))
 
+df <- file.path(data_in, "2020-05_SC_FACT_Data_v2.csv") %>% 
+  vroom() %>% 
+  rename_all(~tolower(.))
 
 #reshape long and create indicator field
-#df_long <- df %>% 
-  #gather(indicator, value, soh:mos, na.rm = TRUE)
+df_long <- df %>%
+  select(-facility_mapped, source) %>% 
+  gather(indicator, value, soh:mos, na.rm = TRUE)
 
 #clean up workspace----------------------------------------------
 
@@ -119,12 +123,7 @@ df %>%
   write_csv(file.path(data_out, "2020_03_site_count.csv"))
 
   
-  df_long %>% 
-    filter(country == "Uganda") %>% 
-    distinct(facility)
 
-  
-  
   # any rows missing 'product'?
   df_long %>%
     filter(indicator == "ami",
@@ -132,5 +131,28 @@ df %>%
     group_by(product, period) %>% 
     summarise(unqiue_code = n_distinct(product)) %>% 
     spread(period, unqiue_code) %>% prinf()
+  
+  
+# look at product  
+
+  df_long %>% 
+    distinct(country, period, product) %>%
+    write_csv(file.path(data_in, "test_prod.csv"))
+    
+  df_long %>%
+    filter(indicator == "soh") %>%
+    group_by(country, period, product) %>%
+    summarise(value = sum(value)) %>%
+    write_csv(file.path(data_in, "test_prod.csv"))
+    
+    df_long %>% 
+      distinct(product, productcategory) %>% arrange(productcategory) %>% prinf()
+    
+    
+    
+    
+    
+    
+  
 
 

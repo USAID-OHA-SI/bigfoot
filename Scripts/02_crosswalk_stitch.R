@@ -16,24 +16,29 @@ library(fs)
 library(glitr)
 library(glamr)
 library(ICPIutilities)
+library(here)
 
 
 #Globals----------------------------------------------------------
 data_in <- "data"
 data_out <- "Dataout"
-x_files <- "C:/Users/Josh/Documents/GitHub/bigfoot/data/xwalk"
-
+#x_files <- "C:/Users/Josh/Documents/GitHub/bigfoot/data/xwalk"
+x_files <- here(data_in, "xwalk")
 
 #read in and munge-----------------------------------------------
 
 #list all the crosswalk files
 files <- list.files(x_files, "*.xlsx", full.names = TRUE)
 
+
 #function to stitch together and fix
 stitch_xwalk <- function(file){
   
+  sheetname <- readxl::excel_sheets(file) %>% 
+    pluck(grep("Mapped", .))
+  
   df <- readxl::read_xlsx(file,
-                  sheet = "Mapped Facilities v2",
+                  sheet = sheetname,
                   col_types = c("text")) %>%
     dplyr::mutate(country = basename(file)) %>% 
     dplyr::rename_all(~tolower(.))
@@ -42,28 +47,39 @@ stitch_xwalk <- function(file){
 }
 
 #create df
-df_cross <- map_dfr(.x = files,
+df_cross <- purrr::map_dfr(.x = files,
                     .f = ~ stitch_xwalk(.x))
 
  
 ## clean up, fix ou
 
+# xwalk <- df_cross %>% 
+#   mutate(country = str_remove(country, " LMIS MER Mapping v3.xlsx")) %>% 
+#   mutate_at(vars("similarity"), as.numeric)
+
 xwalk <- df_cross %>% 
-  mutate(country = str_remove(country, " LMIS MER Mapping v2.xlsx")) %>% 
-  select(-`...7`) %>%
-  rename(threshold = `similarity threshold`) %>%
-  mutate_at(vars("similarity", "threshold"), as.numeric)
+  mutate(country = str_remove(country, "\\ .*")) %>% 
+  mutate_at(vars("similarity"), as.numeric) %>% 
+  select(country, facility, orgunituid)
 
 #duplicate check
 
-xwalk <- xwalk %>% 
-  group_by(country, facility) %>% 
+test <-df_cross %>% 
+  group_by(country, facility) %>%
   mutate(n = n(),
          dup_flag = row_number()) %>% 
   ungroup()
 
 xwalk %>%
-  filter(n>1) %>% 
+  filter(n>1,
+         country == "Zambia") %>% 
+  arrange(country, facility, orgunituid) %>%
+  view()  
+  
+
+xwalk %>%
+  filter(n>1,
+         orgunituid != "NA") %>% 
   arrange(country, facility, orgunituid) %>%
   view()
 

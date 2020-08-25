@@ -45,13 +45,13 @@ df_mer <- df_mer_raw %>%
 
 #one more reshape to get rid of disags, etc..
 df_mer <- df_mer %>% 
-  reshape_msd("long") %>% 
-  group_by(sitename, operatingunit, orgunituid, snu1, psnu, indicator, period) %>% 
+  reshape_msd("long") %>%
+  filter(period == "fy2020cumulative") %>% 
+    group_by(sitename, operatingunit, orgunituid, snu1, psnu, indicator) %>% 
   summarise(val = sum(val, na.rm = TRUE)) %>% 
   ungroup() %>% 
   rename(country = operatingunit,
          value = val) %>% 
-  filter(period == "fy2020cumulative") %>% 
   mutate(country = tolower(country))
 
 #splay both df's wide, drop pd---------------------------------------------
@@ -59,8 +59,7 @@ df_mer <- df_mer %>%
 df_mer_w <- df_mer %>% 
   spread(indicator, value)
 
-df_long_dedup_w <- df_regimen %>% 
-  select(-period) %>% 
+df_regimen_w <- df_regimen %>% 
   spread(indicator, value)
 
 # df_xwalked_w <- df_xwalked %>%
@@ -82,7 +81,11 @@ df_mer_w <- df_mer_w %>%
   left_join(xwalk)
 
 df_sch_mer <- df_mer_w %>% 
-  left_join(df_long_dedup_w)
+  full_join(df_regimen_w)
+
+df_mer_w %>% write_csv(file.path(data_out, "mer_q2_wide_sc_xwalk.csv"))
+df_long_dedup_w %>% write_csv(file.path(data_out, "sc_fact_2020.03.wide.csv"))
+
 
 #write
 
