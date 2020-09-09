@@ -27,7 +27,13 @@ x_files <- here(data_in, "xwalk")
 
 #read in and munge-----------------------------------------------
 
-#list all the crosswalk files
+## update for google drive
+folder <- "1DYnNzypGeUFpc23DkHdVBazvDVN9c5Dk"
+
+drive_files <- drive_ls(as_id(folder)) %>% pull(name)
+
+# 
+# #list all the crosswalk files
 files <- list.files(x_files, "*.xlsx", full.names = TRUE)
 
 
@@ -46,6 +52,25 @@ stitch_xwalk <- function(file){
     return(df)
 }
 
+g_stitch_xwalk <- function(file){
+  
+  sheetname <- googlesheets4::sheet_names(file) %>% 
+    pluck(grep("Mapped", .))
+  
+  df <- googlesheets4::read_sheet(file,
+                          sheet = sheetname,
+                          col_types= c(.default = "c")) %>%
+    dplyr::mutate(country = basename(file)) %>% 
+    dplyr::rename_all(~tolower(.))
+  
+  return(df)
+}
+
+#test it
+test_x <- purrr::map_dfr(.x = drive_files,
+                         .f = ~ g_stitch_xwalk(.x))
+
+
 #create df
 df_cross <- purrr::map_dfr(.x = files,
                     .f = ~ stitch_xwalk(.x))
@@ -62,26 +87,26 @@ xwalk <- df_cross %>%
   mutate_at(vars("similarity"), as.numeric) %>% 
   select(country, facility, orgunituid)
 
-#duplicate check
-
-test <-df_cross %>% 
-  group_by(country, facility) %>%
-  mutate(n = n(),
-         dup_flag = row_number()) %>% 
-  ungroup()
-
-xwalk %>%
-  filter(n>1,
-         country == "Zambia") %>% 
-  arrange(country, facility, orgunituid) %>%
-  view()  
-  
-
-xwalk %>%
-  filter(n>1,
-         orgunituid != "NA") %>% 
-  arrange(country, facility, orgunituid) %>%
-  view()
+# #duplicate check
+# 
+# test <-df_cross %>% 
+#   group_by(country, facility, orgunituid) %>%
+#   mutate(n = n(),
+#          dup_flag = row_number()) %>% 
+#   ungroup()
+# 
+# xwalk %>%
+#   filter(n>1,
+#          country == "Zambia") %>% 
+#   arrange(country, facility, orgunituid) %>%
+#   view()  
+#   
+# 
+# test %>%
+#   filter(n>1,
+#          orgunituid != "NA") %>% 
+#   arrange(country, facility, orgunituid) %>%
+#   view()
 
 # xwalk %>%
 #   filter(n > 1) %>%
@@ -91,7 +116,6 @@ xwalk %>%
 ## prepare to join to sc_fact, keeping only vars of interest
 ## 7/16 update, drop duplicates
 xwalk <- xwalk %>%
-  filter(n == 1) %>% 
   select(country, facility, orgunituid) %>% 
   mutate_at(vars(country, facility), ~tolower(.))
 
