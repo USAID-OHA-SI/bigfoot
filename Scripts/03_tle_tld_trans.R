@@ -24,14 +24,18 @@ images <- "Images"
 #read in data----------------------------------------------------
 # read in data SC_FACT data
 
-df <- file.path(data_in, "SC-FACT Data 2020-06 Updated.csv") %>% 
-  vroom() %>% 
-  rename_all(~tolower(.))
+df_sc <- read_csv(file.path(data_in, "SC-FACT_Data_2020-07.csv"),
+               col_types = cols(.default = "c"),
+               locale = readr::locale(encoding = "latin1")) %>% 
+  rename_all(~tolower(.)) %>% 
+  mutate_at(vars(country, facility), ~tolower(.)) %>% 
+  mutate_at(vars(soh, ami, mos), ~as.numeric(.))
+
 
 ## filter SC_fact data to just arvs in arvs
-
-df <- df %>% 
-  filter(productcategory %in% c("ARV", "Adult ARV", "Pediatric ARV"))
+# 
+# df <- df %>% 
+#   filter(productcategory %in% c("ARV", "Adult ARV", "Pediatric ARV"))
 
 ## first read in file that adds mot, etc..
 ## make this dynamic; read from google drive
@@ -55,7 +59,7 @@ df_prods <-  df_g_drive %>%
   
 ##join products and sc_fact
 
-df_merged <- left_join(df, df_prods, by = "product")
+df_merged <- left_join(df_sc, df_prods, by = "product")
 
 # ## check merged for duplicates
 # dim(df_merged)[1] - dim(df)[1]
@@ -79,27 +83,47 @@ df_long <- df_merged %>%
 
 # Check for duplicates, flag those groups with more than 1 unique rows, then filter
 # to remove the duplicates so we get a better merge
-df_long <- df_long %>% 
-  group_by(facility, snl1, country, period, product, indicator, value) %>% 
+df_long <- df_long %>%
+  filter(value !=0,
+         period %in% c("2020-07", "2020-06")) %>% 
+  group_by(facility, snl1, snl2, country, period, product, indicator, value) %>% 
   mutate(n = n(),
          dup_flag = row_number()) %>% 
   ungroup()
 
 ## look at duplicates
 
-df_long %>%
-  filter(n > 1) %>%
-  arrange(facility) %>% 
-  view()
-
-df_long %>%
-  filter(n > 1) %>%
-  arrange(period) %>% 
-  distinct(period, country) %>% prinf()
+# df_long %>%
+#   filter(n > 1) %>%
+#   arrange(facility) %>%
+#   view()
+# 
+# df_long %>%
+#   filter(n > 1) %>%
+#   arrange(product) %>%
+#   distinct(product) %>%
+#   view()
+# 
+# df_long %>%
+#   filter(product %in% c("Dolutegravir 50 mg Tablet, 30 Tablets", "Dolutegravir 50 mg Tablet, 30 Tabs")) %>%
+#   arrange(country, period) %>%
+#   distinct(country, period, product, n) %>% view()
+# 
+# df_long %>%
+#   filter(n > 1) %>%
+#   arrange(period) %>%
+#   distinct(period, country) %>% prinf()
+# 
+# df_long %>%
+#   filter(n > 1,
+#          country == "malawi",
+#          period == "2020-01") %>%
+#   arrange(product, value) %>%
+#   distinct(facility, product, value) %>% view()
 
   
 #remove duplicate obs
-df_long_dedup <- df_long %>% filter(n ==1)
+df_long_dedup <- df_long %>% filter(n == 1)
 
 #remove flags
 df_long_dedup <- df_long_dedup %>% 
@@ -119,17 +143,25 @@ dim(df_long)[1] - dim(df_long_dedup)[1]
 
 ## updated 8.25 for new vars
 df_regimen <- df_long_dedup %>%
-  group_by(country, regimen_type_mer, age_group, regimen_optimized,
-           combination_type, indicator, period) %>%
-  summarise(value = round(sum(value, na.rm = TRUE),0)) %>% 
+  group_by(country, snl1, snl2, facility, regimen_type_mer, indicator, period) %>%
+  summarise(value = round(sum(value, na.rm = TRUE),0)) %>%
+  ungroup() %>% 
   filter(value !=0)
+
+## look at time period by ou
+
+df_regimen %>% 
+  group_by(country, period, indicator)  %>% 
+  summarise(value = sum(value)) %>% 
+  spread(period, value) %>% prinf()
+
   
   
 #write-----------------------------------------------------------------------------
-df_regimen %>% write_csv(file.path(data_out, "lmis_may_collapsed_8.31.20.csv"))
+#df_regimen %>% write_csv(file.path(data_out, "lmis_may_collapsed_8.31.20.csv"))
 
 #clean up workspace----------------------------------------------------------------
-rm(df, df_g_drive, df_long, df_merged, df_prods)
+rm(df_g_drive, df_long, df_merged, df_prods, df_long_dedup)
 
 ## df_long now has all the thigns we want to merge
 ## join on the 'sitename' which is the datim site name from the crosswalked files

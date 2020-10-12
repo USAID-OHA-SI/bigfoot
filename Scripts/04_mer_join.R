@@ -1,43 +1,57 @@
 ## PROJECT:  bigfoot
 ## AUTHOR:   jdavis | USAID
 ## LICENSE:  MIT
-## PURPOSE:  read in and join MER data to SC_FACT
-## DETAIL :  
+## PURPOSE:  read in MER data and munge
+## DETAIL :  Read in site level data for 12 OUs and change to format for merging with SC_FACT
 
 #Dependancies-------------------------------------------------
-mer <- "C:/Users/Josh/Documents/data/fy20_q2_v1/site_level"
+#where are your MER site level datasets - for 12 LMIS ous only
+mer <- "C:/Users/Josh/Documents/data/fy20_q3_v1/site_level_for_lmis"
 
-indc <- c("TX_CURR", "TX_NEW")
+# do you need to subset by indicator?
 
-#Libraries----------------------------------------------------
+# list of LMIS OUs if you need them
+lmis_ous  <- c("Angola",
+          "Botswana",
+          "Cameroon",
+          "Haiti",
+          "Lesotho",
+          "Malawi",
+          "Mozambique",
+          "Namibia",
+          "Nigeria",
+          "Uganda",
+          "Zambia",
+          "Zimbabwe")
+
+#Libraries-------------------------------------------------
 
 
 #munge--------------------------------------------------------
 # create site level MER data
 
-# makey_rds <- dir(mer, pattern = "*.rds", full.names = TRUE)
-# 
-# get_scfact_mer <- function(input) {
-#   
-#   df_mer <- readr::read_rds(input) %>% 
-#     dplyr::filter(fiscal_year == 2020,
-#                   (indicator %in% indc &
-#                     numeratordenom == "N" & trendscoarse %in% c("<15", "15+")) |
-#     (indicator %in% indc & 
-#        standardizeddisaggregate == "Total Numerator") | 
-#       indicator %in% c("SC_CURR", "SC_ARVDISP"))
-# 
-# }
-# 
-# 
-# df_mer_raw <- purrr::map_dfr(.x = makey_rds, .f = ~get_scfact_mer(.x))
-# 
-# df_mer_raw %>% write_csv(file.path(data_out, "2020_tx_sc_mer.csv"))
+listy <- dir(mer, pattern = "*.txt", full.names = TRUE)
 
-df_mer_raw <- vroom::vroom(file.path(data_out, "2020_tx_sc_mer.csv"))
+# function is set up to get 
+get_scfact_mer <- function(input) {
+
+  df <- ICPIutilities::read_msd(input) %>% 
+    filter(indicator %in% c("TX_CURR", "SC_ARVDISP"),
+           indicator == "TX_CURR" & standardizeddisaggregate %in% c("Age/Sex/ARVDispense/HIVStatus",
+                                                                    "Total Numerator") |
+             indicator == "SC_ARVDISP")
+}
+
+df_mer_raw <- purrr::map_dfr(.x = listy,
+                         .f =~ get_scfact_mer(.x))
+## check output
+
+df_mer_raw %>% 
+  distinct(indicator, standardizeddisaggregate, otherdisaggregate) %>% arrange(indicator) %>% prinf()
 
 #clean up
 df_mer <- df_mer_raw %>%
+  filter(operatingunit %in% lmis_ous) %>% 
   dplyr::group_by_at(vars(-primepartner, -fundingagency, -mech_code, -mech_name,
                           -pre_rgnlztn_hq_mech_code, -prime_partner_duns, -award_number)) %>%
   dplyr::summarise(across(where(is.numeric), sum, na.rm = TRUE)) %>% 
@@ -47,12 +61,18 @@ df_mer <- df_mer_raw %>%
 df_mer <- df_mer %>% 
   reshape_msd("long") %>%
   filter(period == "fy2020cumulative") %>% 
-    group_by(sitename, operatingunit, orgunituid, snu1, psnu, indicator) %>% 
+    group_by(sitename, operatingunit, orgunituid, snu1, psnu, indicator, standardizeddisaggregate, otherdisaggregate) %>% 
   summarise(val = sum(val, na.rm = TRUE)) %>% 
   ungroup() %>% 
   rename(country = operatingunit,
          value = val) %>% 
   mutate(country = tolower(country))
+
+
+
+#end-----------------------------------------------------------------------------------
+df_mer %>% 
+  distinct(indicator, standardizeddisaggregate, otherdisaggregate) %>% prinf()
 
 #splay both df's wide, drop pd---------------------------------------------
 
@@ -103,28 +123,3 @@ group_by(country) %>%
 
 
 
-glimpse(df_xwalked)
-glimpse(df_mer)
-
-df_mer %>%
-  filter(operatingunit == "Mozambique") %>% 
-  distinct(sitename) %>%
-  arrange(sitename) %>% 
-  print(n=100)
-
-df_mer %>% 
-  distinct(indicator)
-
-
-df_mer_raw %>%
-  filter(operatingunit == "Mozambique") %>% 
-  distinct(sitename) %>%
-  arrange(sitename) %>% 
-  print(n=100)
-
-
-df_merged %>%
-  filter(country == "angola") %>% 
-  distinct(facility, sitename) %>%
-  arrange(facility) %>% 
-  prinf()
