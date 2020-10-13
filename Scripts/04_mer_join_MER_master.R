@@ -9,6 +9,7 @@
 #Dependancies-------------------------------------------------
 #where are your MER site level datasets - for 12 LMIS ous only
 mer <- "C:/Users/Josh/Documents/data/fy20_q3_v1/site_level_for_lmis"
+mer <- "C:/Users/cadelson/documents/GitHub/MSD/preclean_msd_q3"
 
 # do you need to subset by indicator?
 
@@ -34,7 +35,7 @@ lmis_ous  <- c("Angola",
 
 listy <- dir(mer, pattern = "*.txt", full.names = TRUE)
 
-# function is set up to get 
+# function is set up to get what we need from the MSD
 get_scfact_mer <- function(input) {
 
   df <- ICPIutilities::read_msd(input) %>% 
@@ -63,6 +64,7 @@ df_mer <- df_mer_raw %>%
 #one more reshape to get rid of disags, etc..
 df_mer <- df_mer %>% 
   reshape_msd("long") %>%
+  filter(fiscal_year == "2020") %>% 
     group_by(sitename, operatingunit, orgunituid, snu1, psnu, indicator, standardizeddisaggregate, otherdisaggregate) %>% 
   summarise(val = sum(val, na.rm = TRUE)) %>% 
   ungroup() %>% 
