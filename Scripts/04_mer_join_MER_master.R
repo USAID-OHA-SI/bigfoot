@@ -56,22 +56,22 @@ df_mer_raw %>%
 #clean up
 df_mer <- df_mer_raw %>%
   filter(operatingunit %in% lmis_ous) %>% 
+  filter(fiscal_year == "2020") %>% 
   dplyr::group_by_at(vars(-primepartner, -fundingagency, -mech_code, -mech_name,
                           -pre_rgnlztn_hq_mech_code, -prime_partner_duns, -award_number)) %>%
   dplyr::summarise(across(where(is.numeric), sum, na.rm = TRUE)) %>% 
   dplyr::ungroup()
 
 #one more reshape to get rid of disags, etc..
+
 df_mer <- df_mer %>% 
   reshape_msd("long") %>%
-  filter(fiscal_year == "2020") %>% 
-    group_by(sitename, operatingunit, orgunituid, snu1, psnu, indicator, standardizeddisaggregate, otherdisaggregate) %>% 
+  group_by(sitename, operatingunit, orgunituid, snu1, psnu, indicator, period, standardizeddisaggregate, otherdisaggregate) %>% 
   summarise(val = sum(val, na.rm = TRUE)) %>% 
   ungroup() %>% 
   rename(country = operatingunit,
          value = val) %>% 
   mutate(country = tolower(country))
-
 
 
 #end-----------------------------------------------------------------------------------
