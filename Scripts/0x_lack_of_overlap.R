@@ -13,6 +13,7 @@ library(googlesheets4)
 library(here)
 
 
+
 #Globals----------------------------------------------------------
 data_in <- "Data"
 data_out <- "Dataout"
@@ -60,7 +61,7 @@ df_bigfoot <- df_all %>%
   full_join(xwalk)
 
 df_bigfoot_mod <- df_all %>% 
-  full_join(xwalk_mod)
+  full_join(xwalk)
 
 #diagnostics
 
@@ -91,6 +92,11 @@ df_bigfoot %>% filter(operatingunit == "Angola",
 df_bigfoot %>% filter(operatingunit == "Haiti",
                       no_lmis_match == "lmis site") %>% 
   distinct(sitename, facility) %>% prinf()
+
+df_sc %>%
+  
+  
+  
 
 #end------------------------------------------------------
 #bring lat x longs
