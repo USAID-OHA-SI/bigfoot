@@ -41,7 +41,7 @@ mer <- "C:/Users/Josh/Documents/data/fy20_q3_v1/lmis_ddc_site_level_targets"
 
 #munge and stitch--------------------------------------------------
 #
-list.files(path = folder, pattern = "X|Y|Z") %>% map_drf(.f = read_msd())
+list.files(path = folder, pattern = "X|Y|Z") %>% map_dfr(.f = read_msd())
 
 
 msds <- dir(mer, pattern = "*.txt", full.names = TRUE)
