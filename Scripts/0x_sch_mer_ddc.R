@@ -37,23 +37,28 @@ lmis_ous  <- c("Angola",
 
 indc <- c("PrEP_CURR", "TB_PREV", "HTS_TST", "HTS_TST_POS")
 
-mer <- "C:/Users/Josh/Documents/data/fy20_q3_v1/lmis_ddc_site_level_targets"
+mer <- "C:/Users/Josh/Documents/data/fy20_q4_v1/site_ddc"
 
 #munge and stitch--------------------------------------------------
-#
-list.files(path = folder, pattern = "X|Y|Z") %>% map_dfr(.f = read_msd())
 
+##break this up into two parts
+# creating rdss first keeps us from running into the memory error w function
 
-msds <- dir(mer, pattern = "*.txt", full.names = TRUE)
+raw_msds <- dir(mer, pattern = "*.zip", full.names = TRUE)
+
+purrr::map(.x = msds,
+           .f = ~ICPIutilities::read_msd(.x, save_rds = TRUE))
 
 #function to create ddc compliant dataset
 stitch_ddc <- function(file) {
-  df <- ICPIutilities::read_msd(file) %>%
+  df <- readr::read_rds(file) %>%
+    filter(fiscal_year == "2020") %>% 
     ICPIutilities::reshape_msd("long") %>%
-    filter(indicator == "TX_CURR" &
+    filter(period == "fy2020q4",
+           indicator == "TX_CURR" & (
              is.na(trendscoarse) | trendscoarse == "15+" &
              standardizeddisaggregate %in%
-             c("Age/Sex/ARVDispense/HIVStatus", "Total Numerator", "Age/Sex/HIVStatus")|
+             c("Age/Sex/ARVDispense/HIVStatus", "Total Numerator", "Age/Sex/HIVStatus")) |
              indicator %in% indc & standardizeddisaggregate == "Total Numerator") %>%
     filter(standardizeddisaggregate != "KeyPop/HIVStatus") %>% 
     group_by(sitename, orgunituid, operatingunit, snu1, psnu, standardizeddisaggregate,
@@ -64,13 +69,15 @@ stitch_ddc <- function(file) {
 }
 
 #create df
+msds <- dir(mer, pattern = "*.rds", full.names = TRUE)
+
 df_ddc <- purrr::map_dfr(.x = msds,
-                         .f = ~ stitch_ddc(.x)) %>% 
-  filter(operatingunit %in% lmis_ous)
+                         .f = ~ stitch_ddc(.x))
+
 
 #write it
 
-df_ddc %>% write_csv(file.path(data_out, "mer_sch_ddc_v3.csv"))
+df_ddc %>% write_csv(file.path(data_out, "mer_sch_ddc_fy20q4_v1.csv"))
 
 #test
 
@@ -79,13 +86,14 @@ df_ddc %>% distinct(indicator, period) %>% arrange(period)
 df_ddc %>% distinct(operatingunit)
 df_ddc %>%
   group_by(operatingunit, indicator, period) %>% 
-  summarise(val = sum(value))
+  summarise(val = sum(value)) %>% prinf()
+
 df_ddc %>% distinct(indicator, standardizeddisaggregate, otherdisaggregate) %>%
   arrange(indicator) %>% 
   prinf()
 
 
-file <- "C:/Users/Josh/Documents/data/fy20_q3_v1/lmis_ddc_site_level_targets/Genie_SITE_IM_Haiti_Frozen_54704634-a3e6-4550-ae1b-8313f4ed474d.txt"
+file <- "C:/Users/Josh/Documents/data/fy20_q4_v1/site_ddc/MER_Structured_Datasets_Site_IM_FY18-21_20201113_v1_1_Angola.rds"
 #original
 df <- ICPIutilities::read_msd(file) %>%
   ICPIutilities::reshape_msd("long") %>%
@@ -124,10 +132,30 @@ df <- ICPIutilities::read_msd(file) %>%
   summarise(value = sum(val)) %>%
   ungroup()
 
+#take 4
+df <- readr::read_rds(file) %>%
+  filter(fiscal_year == "2020") %>% 
+  ICPIutilities::reshape_msd("long") %>%
+  filter(period == "fy2020q4",
+         indicator == "TX_CURR" & (
+           is.na(trendscoarse) | trendscoarse == "15+" &
+           standardizeddisaggregate %in%
+           c("Age/Sex/ARVDispense/HIVStatus", "Total Numerator", "Age/Sex/HIVStatus")) |
+           indicator %in% indc & standardizeddisaggregate == "Total Numerator") %>%
+  filter(standardizeddisaggregate != "KeyPop/HIVStatus") %>% 
+  group_by(sitename, orgunituid, operatingunit, snu1, psnu, standardizeddisaggregate,
+           otherdisaggregate, indicator, period) %>%
+  summarise(value = sum(val)) %>%
+  ungroup()
+
 #test
 df %>%
   filter(indicator == "TX_CURR") %>% 
   group_by(standardizeddisaggregate, indicator, period) %>% 
+  summarise(val = sum(value)) %>% prinf()
+
+df %>%
+  group_by(indicator, standardizeddisaggregate) %>% 
   summarise(val = sum(value)) %>% prinf()
 
 df %>%
