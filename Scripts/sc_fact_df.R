@@ -1,16 +1,15 @@
 #' sc_fact_df
 #'
-#' @param  
+#' @param filepath where sc_fact data set was read in via `get_scfact`
 #'
-#' @return
+#' @return returns a dataframe with munged and joined sc_fact data
 #' @export
 #'
-#' @examples
-sc_fact_df <- function() {
+sc_fact_df <- function(filepath) {
   
   ##read in and munge sc_fact
   
-  sc_fact_filename <- glamr::return_latest("Data", "*.csv")
+  sc_fact_filename <- glamr::return_latest(filepath, "*.csv")
   
   df <- readr::read_csv(sc_fact_filename,
                         col_types = cols(.default = "c"),
