@@ -15,7 +15,7 @@ sc_fact_df <- function(filepath) {
                         col_types = cols(.default = "c"),
                         locale = readr::locale(encoding = "latin1")) %>% 
     dplyr::rename_all(~tolower(.)) %>% 
-    dplyr::mutate_at(vars(country, facility), ~tolower(.)) %>% 
+    dplyr::mutate_at(vars(country, lmis_facility), ~tolower(.)) %>% 
     dplyr::mutate_at(vars(soh, ami, mos), ~as.numeric(.))
 
   ##read in meta
@@ -39,9 +39,7 @@ sc_fact_df <- function(filepath) {
   
   #create indicator field, reshape, and select
   df <- df %>% 
-    gather(indicator, value, colnames(select_if(., is.numeric)), na.rm = TRUE) %>% 
-    select(-facilitycd, -datimcode, -facility_mapped, -source, -`datim facility`)
-  
+    gather(indicator, value, colnames(select_if(., is.numeric)), na.rm = TRUE)
   return(df)
     
 }
