@@ -40,6 +40,10 @@ sc_fact_df <- function(filepath) {
   #create indicator field, reshape, and select
   df <- df %>% 
     gather(indicator, value, colnames(select_if(., is.numeric)), na.rm = TRUE)
+  
+  df %>% readr::write_csv(., paste0("Dataout/sc_fact_",
+                                        format(Sys.Date(),"%Y%m%d"), ".csv"))
+  
   return(df)
     
 }
