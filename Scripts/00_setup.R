@@ -3,20 +3,26 @@
 ## LICENSE:  MIT
 ## PURPOSE:  structure project folders
 
+#libraries-----------------------------------------------------------------
+library(tidyverse)
+library(readxl)
+library(vroom)
+library(ICPIutilities)
+library(glamr)
+library(glitr)
+library(googledrive)
+library(googlesheets4)
+library(here)
 
-# FUNCTION ----------------------------------------------------------------
+# set up ----------------------------------------------------------------
+
+glamr::si_setup()
 
 
-folder_setup <- function(folder_list = list("Data", "Images", "Scripts", 
-                                            "Dataout", "GIS", "Documents", "Graphics", "markdown")) {
-  if(!is.list(folder_list))
-    stop("Please provide a list of directories to create for the project.")
-  print("The following directories will be created:")
-  print(glue::glue(crayon::green('{folder_list}')))
-  purrr::map(folder_list, ~dir.create(.))
-  
-}
+# Set global shortcuts ----------------------------------------------------
 
-# Set global shortucts ----------------------------------------------------
+Data <- "./Data"
+Dataout <- "./Dataout"
 
-folder_setup()
+
+
