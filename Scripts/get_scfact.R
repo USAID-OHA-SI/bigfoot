@@ -15,9 +15,7 @@ get_scfact <- function(path){
   
   
   glamr::import_drivefile(drive_folder = "1og4f-ZVzIF2H3TjfxfvLlJv1HYRU_0zD",
-                        filename = filename,
-                        folderpath = "Data",
-                        zip = FALSE)
+                          filename = filename,
+                          folderpath = "Data",
+                          zip = FALSE)
 }
-
-
