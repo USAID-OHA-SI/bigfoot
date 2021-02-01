@@ -12,12 +12,10 @@ sc_fact_df <- function(filepath) {
   sc_fact_filename <- glamr::return_latest(filepath, "*.csv")
   
   df <- readr::read_csv(sc_fact_filename,
-                        col_types = cols(.default = "c"),
-                        locale = readr::locale(encoding = "latin1")) %>% 
-    dplyr::rename_all(~tolower(.)) %>% 
-    dplyr::mutate_at(vars(country, lmis_facility), ~tolower(.)) %>% 
+                        col_types = cols(.default = "c")) %>%
+    dplyr::rename_with(tolower) %>% 
     dplyr::mutate_at(vars(soh, ami, mos), ~as.numeric(.))
-
+  
   ##read in meta
 
   df_meta <- googlesheets4::read_sheet("1O-rwWWp-8GsbqWhfcr01S9glMazAdEGvdkwhMZZcf0Y",
@@ -41,9 +39,27 @@ sc_fact_df <- function(filepath) {
   df <- df %>% 
     gather(indicator, value, colnames(select_if(., is.numeric)), na.rm = TRUE)
   
+  #generate snl1+snl2+facility for joining
+  
+  df <- df %>%
+    dplyr::mutate(join_var = paste(lmis_snl1, lmis_snl2, lmis_facility, sep = "_"))
+    
+  
   df %>% readr::write_csv(., paste0("Dataout/sc_fact_",
                                         format(Sys.Date(),"%Y%m%d"), ".csv"))
   
   return(df)
     
 }
+
+
+
+
+test <- df %>% 
+  mutate(joining_var = paste(lmis_snl1, lmis_snl2, lmis_facility, sep = "_"))
+
+
+
+
+
+
