@@ -40,10 +40,9 @@ sc_fact_df <- function(filepath) {
     gather(indicator, value, colnames(select_if(., is.numeric)), na.rm = TRUE)
   
   #generate snl1+snl2+facility for joining
-  
+
   df <- df %>%
-    dplyr::mutate(join_var = paste(lmis_snl1, lmis_snl2, lmis_facility, sep = "_"))
-    
+    tidyr::unite(join_var, lmis_snl1, lmis_snl2, lmis_facility, sep = "_", na.rm = TRUE, remove = FALSE)
   
   df %>% readr::write_csv(., paste0("Dataout/sc_fact_",
                                         format(Sys.Date(),"%Y%m%d"), ".csv"))
@@ -51,12 +50,6 @@ sc_fact_df <- function(filepath) {
   return(df)
     
 }
-
-
-
-
-test <- df %>% 
-  mutate(joining_var = paste(lmis_snl1, lmis_snl2, lmis_facility, sep = "_"))
 
 
 
