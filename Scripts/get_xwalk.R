@@ -1,16 +1,12 @@
-## PROJECT:  Bigfoot
-## AUTHOR:   j.davis | USAID
-## LICENSE:  MIT
-## PURPOSE:  Read crosswalk file from gdrive, munge, and read into mem as df
-## Date:     2021-01-23
-
-## read crosswalk from google drive
-
-#' get_xwalk
+#' Download and munge crosswalk file from PSM
 #'
+#' @param path path where you want file stored, default = "Data/xwalk"
+
 #'
 #' @examples
-get_xwalk <- function(){
+
+
+get_xwalk <- function(path = crosswalk){
 
 file <- googledrive::drive_ls(googledrive::as_id("1akQsYUCMYORFlmt--nWrx850Gw8l39sk"))
 
@@ -19,12 +15,12 @@ filename <- file %>%
   dplyr::pull(name)
 
 
-glamr::import_drivefile(drive_folder = "1akQsYUCMYORFlmt--nWrx850Gw8l39sk",
+glamr::import_drivefile(drive_folder = googledrive::as_id("1akQsYUCMYORFlmt--nWrx850Gw8l39sk"),
                         filename = filename,
-                        folderpath = "Data",
+                        folderpath = path,
                         zip = FALSE)
 
-xwalk <- readr::read_csv(file.path(Data, filename)) %>% 
+xwalk <- readr::read_csv(file.path(path, filename)) %>% 
   rename_all(~tolower(.)) %>% 
   rename(orgunituid = datim_orgunituid,
          site_name = datim_facility) %>% 

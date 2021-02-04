@@ -5,7 +5,7 @@
 #' @return returns a dataframe with munged and joined sc_fact data
 #' @export
 #'
-sc_fact_df <- function(filepath) {
+sc_fact_df <- function(filepath = sc_fact) {
   
   ##read in and munge sc_fact
   
@@ -44,7 +44,7 @@ sc_fact_df <- function(filepath) {
   df <- df %>%
     tidyr::unite(join_var, lmis_snl1, lmis_snl2, lmis_facility, sep = "_", na.rm = TRUE, remove = FALSE)
   
-  df %>% readr::write_csv(., paste0("Dataout/sc_fact_",
+  df %>% readr::write_csv(., paste0("Dataout",
                                         format(Sys.Date(),"%Y%m%d"), ".csv"))
   
   return(df)

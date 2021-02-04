@@ -16,13 +16,17 @@ library(here)
 
 # set up ----------------------------------------------------------------
 
-glamr::si_setup()
+#glamr::si_setup()
+glamr::folder_setup()
 
 
 # Set global shortcuts ----------------------------------------------------
 
 Data <- "./Data"
 Dataout <- "./Dataout"
+mer_data <- "./Data/mer_data"
+sc_fact <- "./Data/sc_fact"
+crosswalk <- "./Data/xwalk"
 
 
 
