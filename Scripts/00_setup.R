@@ -17,7 +17,7 @@ library(here)
 # set up ----------------------------------------------------------------
 
 #glamr::si_setup()
-glamr::folder_setup()
+#glamr::folder_setup()
 
 
 # Set global shortcuts ----------------------------------------------------
