@@ -7,31 +7,33 @@
 #' @export
 #'
 #' @examples
+filename <- "C:/Users/cadelson/documents/GitHub/MSD/msd_fy20_q4_clean_site_lmis.txt"
 
 get_mer <- function(filepath, filename) {
   
   indc <- c("PrEP_CURR", "TB_PREV", "HTS_TST", "HTS_TST_POS", "SC_CURR", "SC_ARVDISP")
   
-  df <- ICPIutilities::read_msd(file.path(filepath, filename))
-  df <- ICPIutilities::read_msd(file.path(filepath, filename))
+  df <- ICPIutilities::read_msd(filename)
   
-  df <- df_mer %>%
+  df <- df %>%
     select(sitename, orgunituid, fundingagency, operatingunit, snu1, psnu, standardizeddisaggregate,
            otherdisaggregate, indicator, fiscal_year, targets, qtr1, qtr2, qtr3, qtr4, cumulative, trendscoarse)
   
   df <- df %>% 
     ICPIutilities::reshape_msd("long") 
   
+  
   df <- df %>%
-    filter(indicator %in% c("TX_CURR", "TX_NEW") &
+    filter(indicator %in% c("TX_CURR", "TX_NEW") & (
         standardizeddisaggregate %in%
         c("Age/Sex/ARVDispense/HIVStatus", "Total Numerator", "Age/Sex/HIVStatus")) |
-        indicator %in% indc %>%
+        indicator %in% indc) %>%
     filter(standardizeddisaggregate != "KeyPop/HIVStatus") %>% 
     group_by(sitename, orgunituid, operatingunit, snu1, psnu, standardizeddisaggregate,
              otherdisaggregate, indicator, period) %>%
     summarise(value = sum(val)) %>%
     ungroup()
+
 
   
   #Add months of treatment
@@ -40,3 +42,5 @@ get_mer <- function(filepath, filename) {
                              otherdisaggregate=="ARV Bottles - TLD 180-count" ~ (value*6),
                              TRUE ~ value))
 }
+
+df %>% write_csv(file.path(Dataout, "mer_lmis_tableau_output_fy20q4_v2.csv"))
