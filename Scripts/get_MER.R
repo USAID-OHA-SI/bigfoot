@@ -23,7 +23,8 @@ get_mer <- function(filepath = mer_data, filename) {
     dplyr::filter(indicator == "TX_CURR",
            standardizeddisaggregate == "Age/Sex/HIVStatus") %>% 
     dplyr::group_by(across(c(sitename:fiscal_year))) %>% 
-    dplyr::summarise(across(where(is.numeric), sum, na.rm = TRUE))
+    dplyr::summarise(across(where(is.numeric), sum, na.rm = TRUE)) %>% 
+    dplyr::ungroup()
   
   #create df for the rest
   dfo <- df %>% 
@@ -32,10 +33,11 @@ get_mer <- function(filepath = mer_data, filename) {
              (indicator %in% indc & standardizeddisaggregate == "Total Numerator")) %>%
     dplyr::filter(standardizeddisaggregate != "KeyPop/HIVStatus")
   
-  ##bind them and make long
+  ##bind them and make long, remove periods that don't align w/SC_FACT
   dfall <- 
     dplyr::bind_rows(dftx, dfo) %>% 
-    ICPIutilities::reshape_msd("long")
+    ICPIutilities::reshape_msd("long") %>% 
+    dplyr::filter(!period %in% c("fy2019q1", "fy2019q2"))
   
   
   #Add months of treatment
