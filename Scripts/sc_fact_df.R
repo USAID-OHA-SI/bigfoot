@@ -18,11 +18,11 @@ sc_fact_df <- function(filepath = sc_fact) {
   
   ##read in meta
 
-  df_meta <- googlesheets4::read_sheet("1O-rwWWp-8GsbqWhfcr01S9glMazAdEGvdkwhMZZcf0Y",
-                                       sheet = "updated_regimen",
+  df_meta <- googlesheets4::read_sheet("1UJv_LAzcD-lkteET9wGPGmdeFn07WnFf7g8sjs-upgk",
+                                       sheet = "regimen",
                                        col_types= c(.default = "c")) %>%
     dplyr::filter(is.na(`include in analysis?`)) %>% 
-    dplyr::select(-`include in analysis?`, -`...11`, -`...12`) %>% 
+    dplyr::select(-`include in analysis?`) %>% 
     dplyr::rename_all(~tolower(.)) %>% 
     dplyr::mutate(mot = as.numeric(mot))
 
@@ -50,6 +50,7 @@ sc_fact_df <- function(filepath = sc_fact) {
   return(df)
     
 }
+
 
 
 
