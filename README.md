@@ -29,6 +29,8 @@ Functions for working with SC_FACT dataset from PSM. Users should start with 00_
   - Fiscal_year: 2019, 2020, 2021
   - File can be found here <https://drive.google.com/drive/u/0/folders/19xSyTi96oBiNueicPPi8P7iaBctbW5mX>
   
+  -Meta data file can be found here <https://docs.google.com/spreadsheets/d/1UJv_LAzcD-lkteET9wGPGmdeFn07WnFf7g8sjs-upgk/edit?usp=sharing>
+  
   
 
 *Disclaimer: The findings, interpretation, and conclusions expressed herein are those of the authors and do not necessarily reflect the views of United States Agency for International Development. All errors remain our own.*
