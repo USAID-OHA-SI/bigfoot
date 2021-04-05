@@ -10,7 +10,7 @@ get_scfact <- function(path = sc_fact){
   file <- googledrive::drive_ls(googledrive::as_id("1og4f-ZVzIF2H3TjfxfvLlJv1HYRU_0zD"))
   
   filename <- file %>%
-    dplyr::filter(stringr::str_detect(name, pattern = ".csv")) %>%
+    dplyr::filter(stringr::str_detect(name, pattern = "raw")) %>%
     dplyr::pull(name)
   
   

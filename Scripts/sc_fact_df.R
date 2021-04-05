@@ -13,7 +13,7 @@ sc_fact_df <- function(filepath = sc_fact) {
   
   df <- readr::read_csv(sc_fact_filename,
                         col_types = cols(.default = "c")) %>%
-    dplyr::rename_with(tolower) %>% 
+    janitor::clean_names() %>% 
     dplyr::mutate_at(vars(soh, ami, mos), ~as.numeric(.))
   
   ##read in meta
@@ -42,9 +42,9 @@ sc_fact_df <- function(filepath = sc_fact) {
   #generate snl1+snl2+facility for joining
 
   df <- df %>%
-    tidyr::unite(join_var, lmis_snl1, lmis_snl2, lmis_facility, sep = "_", na.rm = TRUE, remove = FALSE)
+    tidyr::unite(join_var, snl1, snl2, facility, sep = "_", na.rm = TRUE, remove = FALSE)
   
-  df %>% readr::write_csv(., paste0("Dataout",
+  df %>% readr::write_csv(., paste0(Dataout, "/sc_fact_processed_",
                                         format(Sys.Date(),"%Y%m%d"), ".csv"))
   
   return(df)
