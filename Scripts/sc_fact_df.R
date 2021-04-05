@@ -14,7 +14,9 @@ sc_fact_df <- function(filepath = sc_fact) {
   df <- readr::read_csv(sc_fact_filename,
                         col_types = cols(.default = "c")) %>%
     janitor::clean_names() %>% 
-    dplyr::mutate_at(vars(soh, ami, mos), ~as.numeric(.))
+    dplyr::mutate_at(vars(soh, ami, mos), ~as.numeric(.)) %>% 
+    dplyr::rename(orgunituid = datim_code) %>% 
+    dplyr::select(-facility_mapped, -unnamed_0, -facility_cd, -source)
   
   ##read in meta
 
