@@ -44,7 +44,8 @@ get_mer <- function(filepath = mer_data, filename) {
   dfall <- dfall %>% 
     dplyr::mutate(val = case_when(otherdisaggregate %in% c("ARV Bottles - TLD 90-count",
                                                     "ARV Bottles - TLE/400 90-count") ~ (val*3),
-                           otherdisaggregate=="ARV Bottles - TLD 180-count" ~ (val*6), TRUE ~ val))
+                           otherdisaggregate=="ARV Bottles - TLD 180-count" ~ (val*6), TRUE ~ val)) %>% 
+    dplyr::rename(value = val)
   
   return(dfall)
   
