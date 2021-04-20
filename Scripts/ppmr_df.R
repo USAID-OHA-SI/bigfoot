@@ -11,22 +11,21 @@ ppmr_df <- function(filepath = ppmr){
   ppmr_filename <- glamr::return_latest(filepath, ".csv")
   
   df <- read_csv(ppmr_filename)
-  
+ 
+  #munge, fix period to match sc_fact 
   df <- df %>% 
     janitor::clean_names() %>%
     dplyr::select(-x1, -notes) %>%
     dplyr::rename(product = standardized_product) %>% 
-    dplyr::mutate(country = stringr::str_to_sentence(country))
+    dplyr::mutate(country = stringr::str_to_sentence(country),
+                  period = str_sub(period, 1, 7))
     
-  
   #bring in meta
   
   df_meta <- googlesheets4::read_sheet("1UJv_LAzcD-lkteET9wGPGmdeFn07WnFf7g8sjs-upgk",
                                        sheet = "regimen",
                                        col_types= c(.default = "c")) %>%
-    dplyr::filter(is.na(`include in analysis?`)) %>% 
-    dplyr::select(-`include in analysis?`) %>% 
-    dplyr::rename_all(~tolower(.)) %>% 
+    janitor::clean_names() %>%
     dplyr::mutate(mot = as.numeric(mot))
   
   #join on meta
@@ -44,4 +43,7 @@ ppmr_df <- function(filepath = ppmr){
   return(df)
   
 }
+
+
+  
 
