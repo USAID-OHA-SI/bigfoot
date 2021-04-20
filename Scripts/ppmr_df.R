@@ -14,8 +14,10 @@ ppmr_df <- function(filepath = ppmr){
   
   df <- df %>% 
     janitor::clean_names() %>%
-    select(-x1, -notes) %>%
-    rename(product = standardized_product) 
+    dplyr::select(-x1, -notes) %>%
+    dplyr::rename(product = standardized_product) %>% 
+    dplyr::mutate(country = stringr::str_to_sentence(country))
+    
   
   #bring in meta
   
