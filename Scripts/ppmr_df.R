@@ -32,7 +32,7 @@ ppmr_df <- function(filepath = ppmr){
     left_join(df_meta) %>% 
     mutate(mot_ami = round(h_ami_amc*mot,0),
            mot_soh = round(soh*mot,0)) %>% 
-    pivot_longer(cols = c("soh", "h_ami_amc", "lmi"),
+    pivot_longer(cols = c("soh", "h_ami_amc", "lmi", "mot", "mot_ami", "mot_soh"),
                  names_to = "indicator",
                  values_to = "value",
                  values_drop_na = TRUE) %>% 
