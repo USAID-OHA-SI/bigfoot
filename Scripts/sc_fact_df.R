@@ -16,15 +16,13 @@ sc_fact_df <- function(filepath = sc_fact) {
     janitor::clean_names() %>% 
     dplyr::mutate_at(vars(soh, ami, mos), ~as.numeric(.)) %>% 
     dplyr::rename(orgunituid = datim_code) %>% 
-    dplyr::select(-facility_mapped, -unnamed_0, -facility_cd, -source)
+    dplyr::select(-facility_mapped, -facility_cd, -source)
   
   ##read in meta
 
   df_meta <- googlesheets4::read_sheet("1UJv_LAzcD-lkteET9wGPGmdeFn07WnFf7g8sjs-upgk",
                                        sheet = "regimen",
                                        col_types= c(.default = "c")) %>%
-    dplyr::filter(is.na(`include in analysis?`)) %>% 
-    dplyr::select(-`include in analysis?`) %>% 
     dplyr::rename_all(~tolower(.)) %>% 
     dplyr::mutate(mot = as.numeric(mot))
 
