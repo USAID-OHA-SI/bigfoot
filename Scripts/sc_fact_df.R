@@ -14,9 +14,23 @@ sc_fact_df <- function(filepath = sc_fact) {
   df <- readr::read_csv(sc_fact_filename,
                         col_types = cols(.default = "c")) %>%
     janitor::clean_names() %>% 
-    dplyr::mutate_at(vars(soh, ami, mos), ~as.numeric(.)) %>% 
+    dplyr::mutate_at(vars(soh, ami, mos), ~as.numeric(.)) %>%
+    dplyr::mutate(country = str_to_sentence(country)) %>% 
     dplyr::rename(orgunituid = datim_code) %>% 
     dplyr::select(-facility_mapped, -facility_cd, -source)
+  
+  ## create mer period values
+  
+  df <- df %>% 
+  dplyr::mutate(mer_pd = case_when(period == "2019-06" ~ "fy2019q3",
+                     period == "2019-09" ~ "fy2019q4",
+                     period == "2019-12" ~ "fy2020q1",
+                     period == "2020-03" ~ "fy2020q2",
+                     period == "2020-06" ~ "fy2020q3",
+                     period == "2020-09" ~ "fy2020q4",
+                     period == "2020-12" ~ "fy2021q1"),
+                fiscal_year = substr(mer_pd,1,))
+
   
   ##read in meta
 
