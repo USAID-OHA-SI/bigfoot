@@ -9,6 +9,8 @@ sc_fact_df <- function(filepath = sc_fact) {
   
   ##read in and munge sc_fact
   
+  glamr::load_secrets()
+  
   sc_fact_filename <- glamr::return_latest(filepath, "*.csv")
   
   df <- readr::read_csv(sc_fact_filename,
@@ -29,7 +31,7 @@ sc_fact_df <- function(filepath = sc_fact) {
                      period == "2020-06" ~ "fy2020q3",
                      period == "2020-09" ~ "fy2020q4",
                      period == "2020-12" ~ "fy2021q1"),
-                fiscal_year = substr(mer_pd,1,))
+                fiscal_year = stringr::str_sub(mer_pd, start = 3, end = 6))
 
   
   ##read in meta
