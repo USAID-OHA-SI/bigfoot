@@ -12,13 +12,17 @@ ppmr_df <- function(filepath = ppmr){
   
   df <- read_csv(ppmr_filename)
  
-  #munge, fix period to match sc_fact 
+  #munge, fix period to match sc_fact
+  #update, changing to no longer match SC_FACT
+  #convert to date, and create pepfar quarter
   df <- df %>% 
     janitor::clean_names() %>%
     dplyr::select(-x1, -notes) %>%
     dplyr::rename(product = standardized_product) %>% 
     dplyr::mutate(country = stringr::str_to_sentence(country),
-                  period = str_sub(period, 1, 7))
+                  period = lubridate::mdy(period),
+                  quarter = lubridate::quarter(period, with_year = TRUE, fiscal_start = 10))
+  
     
   #bring in meta
   
@@ -39,6 +43,9 @@ ppmr_df <- function(filepath = ppmr){
                  values_drop_na = TRUE) %>% 
     filter(value !=0) %>% 
     mutate(value = round(value,0))
+  
+  df %>% readr::write_csv(., paste0(Dataout, "/ppmr_processed_",
+                                    format(Sys.Date(),"%Y%m%d"), ".csv"))
   
   return(df)
   
