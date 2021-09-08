@@ -11,7 +11,7 @@ sc_fact_df <- function(filepath = sc_fact) {
   
   glamr::load_secrets()
   
-  sc_fact_filename <- glamr::return_latest(filepath, "*.csv")
+  sc_fact_filename <- glamr::return_latest(filepath, "sc_fact_raw")
   
   df <- readr::read_csv(sc_fact_filename,
                         col_types = cols(.default = "c")) %>%
