@@ -23,15 +23,11 @@ sc_fact_df <- function(filepath = sc_fact) {
   
   ## create mer period values
   
-  df <- df %>% 
-  dplyr::mutate(mer_pd = case_when(period == "2019-06" ~ "fy2019q3",
-                     period == "2019-09" ~ "fy2019q4",
-                     period == "2019-12" ~ "fy2020q1",
-                     period == "2020-03" ~ "fy2020q2",
-                     period == "2020-06" ~ "fy2020q3",
-                     period == "2020-09" ~ "fy2020q4",
-                     period == "2020-12" ~ "fy2021q1"),
-                fiscal_year = stringr::str_sub(mer_pd, start = 3, end = 6))
+  df <- df %>%
+    filter(country == "Zambia") %>% 
+    mutate(period = as.Date(as.yearmon(period)),
+           mer_pd = paste0("fy",lubridate::quarter(x = period, with_year = TRUE, fiscal_start = 10),"q"),
+           fy = lubridate::quarter(x = period, with_year = TRUE, fiscal_start = 10))
 
   
   ##read in meta
