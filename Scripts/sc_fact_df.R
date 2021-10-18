@@ -24,12 +24,12 @@ sc_fact_df <- function(filepath = sc_fact) {
   ## create mer period values
   
   df <- df %>%
-    filter(country == "Zambia") %>% 
     mutate(period = as.Date(as.yearmon(period)),
            mer_pd = paste0("fy",lubridate::quarter(x = period, with_year = TRUE, fiscal_start = 10),"q"),
-           fy = lubridate::quarter(x = period, with_year = TRUE, fiscal_start = 10))
+           fiscal_year = lubridate::quarter(x = period, with_year = TRUE, fiscal_start = 10),
+           fiscal_year = as.character(fiscal_year),
+           fiscal_year = stringr::str_remove(fiscal_year, "\\..*"))
 
-  
   ##read in meta
 
   df_meta <- googlesheets4::read_sheet("1UJv_LAzcD-lkteET9wGPGmdeFn07WnFf7g8sjs-upgk",
