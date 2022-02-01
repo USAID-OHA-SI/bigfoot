@@ -7,6 +7,7 @@ library(readr)
 ### 5.2.21 update
 ## Per 7 emails Mary sent on Apr 30
 ## 5.2.21 submissin updated with dec,jan,feb new file
+## updated for 9.1.21
 
 files <- list.files("Data/sc_fact/raw", pattern = ".csv", full.names = TRUE)
 

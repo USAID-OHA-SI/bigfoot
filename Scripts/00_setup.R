@@ -20,6 +20,9 @@ library(ggtext)
 library(here)
 library(googledrive)
 library(zoo)
+library(gophr)
+
+glamr::load_secrets()
 
 
 # set up ----------------------------------------------------------------

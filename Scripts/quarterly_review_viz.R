@@ -3,20 +3,42 @@
 # LICENSE: MIT
 # DATE: 2021-10-6
 # NOTES: Create SC_FACT + PPMR dataset
+#     updated for 1/24 DPs meeting to include focus country filter
 
 # LOCALS & SETUP ============================================================================
 
   # Libraries
-    oha
+    library(glitr)
+    library(glamr)
+    library(gisr)
+    library(Wavelength)
+    library(gophr)
+    library(tidyverse)
+    library(scales)
+    library(sf)
+    library(extrafont)
+    library(tidytext)
+    library(patchwork)
+    library(ggtext)
+    library(here)
+    
+    
 
-library(extrafont)
-library(scales)
-library(ggnewscale)
+    library(extrafont)
+    library(scales)
+    library(ggnewscale)
 
   # Set paths  
-    proj_paths
+    data   <- "Data"
+    dataout <- "Dataout"
+    images  <- "Images"
+    graphs  <- "Graphics"
    
-    si_paths 
+    merdata <- glamr::si_path("path_msd")
+    rasdata <- glamr::si_path("path_raster")
+    shpdata <- glamr::si_path("path_vector")
+    datim   <- glamr::si_path("path_datim")  
+     
     
   # Functions  
   
@@ -24,9 +46,10 @@ library(ggnewscale)
 # LOAD DATA ============================================================================  
     
   #mer OU by IM
-    mer_df <- read_msd(file.path(merdata, "MER_Structured_Datasets_OU_IM_FY19-22_20210917_v2_1.zip"))
+    mer_df <- read_msd(file.path(merdata, "MER_Structured_Datasets_OU_IM_FY19-22_20211217_v2_1.zip"))
     
-    df_ppmr <- read_csv("Dataout/ppmr_processed_20211013.csv")
+    # df_ppmr <- read_csv("Dataout/ppmr_processed_20211013.csv")
+    df_ppmr <- ppmr_df()
     
     sc_fact <- read_csv("Dataout/sc_fact_processed_20211013.csv")
     
@@ -35,6 +58,10 @@ library(ggnewscale)
     
     ou2 <- c("Malawi", "Mozambique", "Namibia", "Nigeria", "Rwanda", "Uganda",
              "Vietnam", "Zambia", "Zimbabwe")
+    
+    focus_ous <- c("Angola", "Cameroon", "Democratic Republic of the Congo", "Kenya", "Haiti", 
+                                 "Mozambique", "Nigeria", "Rwanda", "South Sudan",
+                                 "Tanzania", "Uganda", "Zambia", "Zimbabwe")
 
 
 # MUNGE ============================================================================
@@ -47,7 +74,8 @@ library(ggnewscale)
       reshape_msd("semi-wide") %>%
       rename(country = operatingunit) %>% 
       group_by(country, indicator, period) %>% 
-      summarise(targets = sum(targets, na.rm = TRUE)) %>% 
+      summarise(targets = sum(targets, na.rm = TRUE)) %>%
+      ungroup() %>% 
       filter(targets != 0) %>% 
       rename(fy = period) %>% 
       pivot_wider(names_from = indicator, values_from = targets) %>% 
@@ -56,6 +84,10 @@ library(ggnewscale)
                             fy == "FY21" ~ 2021))
     
     #create TLD dataset from PPMR
+    
+    #check country list
+    df_ppmr %>% arrange(country) %>% distinct(country) %>% prinf()
+    
     
     tld <- df_ppmr %>% 
       filter(regimen_optimized %in% c("TLD", "TLE 400"),
@@ -66,6 +98,7 @@ library(ggnewscale)
              year =lubridate::year(period),
              country = case_when(country == "Drc" ~ "Democratic Republic of the Congo",
                                  country == "Cote d'ivoire" ~ "Cote d'Ivoire",
+                                 country == "Nigeria-flare" ~ "Nigeria",
                                  country == "Uganda-jms" ~ "Uganda",
                                  country == "Uganda-maul" ~ "Uganda",
                                  country == "Uganda-nms" ~ "Uganda",
@@ -158,7 +191,8 @@ library(ggnewscale)
         mutate(point_color = ifelse(mot_soh > TX_CURR, "#047491", "#af273d"),
                date_sort = fct_reorder(pd, period, .desc = FALSE)) %>% 
         filter(fy == "2021",
-               country %in% ou1) %>% 
+               country %in% focus_ous,
+               period != "2021-10-31") %>% 
         ggplot(aes(x = period,
                    y = ratio, group = country)) +
         annotate("rect", xmin = as.Date("2020-10-31"), xmax = as.Date("2021-07-31"), ymin = 0, ymax = Inf, alpha = 0.5, fill = grey10k) +
@@ -179,9 +213,9 @@ library(ggnewscale)
         coord_cartesian(clip = "on") +
         labs(x = NULL, y = NULL, title = "Ratio of TLD stock and treatment target",
              subtitle = "FY21 TX_CURR target compared to months of treatment of TLD stock",
-             caption = "Source: PPMR-HIV 2021.10.1, FY21Q3c MSD")+
+             caption = "Source: PPMR-HIV 2021.10.1, FY21Q4c MSD")+
         theme(legend.position = "none") +
-        si_save("Images/tld_ratio_1.png", scale = 1.6) 
+        si_save("Images/tld_ratio_focus.png", scale = 1.6) 
       
       #ou group 2
       
@@ -294,3 +328,108 @@ library(ggnewscale)
         scale_fill_identity() +
         si_style_ygrid() +
         coord_cartesian(clip = "off") 
+      
+      # 1/21/22 update for foucs countries
+      
+      df_all <- read_csv("Dataout/trianguled_sch_mer.csv")
+      
+      df_viz <- df_all %>%
+        arrange(period) %>%
+        mutate(point_color = ifelse(mot_soh > TX_CURR, "#047491", "#af273d"),
+               date_sort = fct_reorder(pd, period, .desc = FALSE)) %>% 
+        filter(fy == "2021",
+               country %in% focus_ous,
+               period != "2021-10-31")
+      
+      #viz
+      # df_viz %>% 
+      #   ggplot(aes(x = period,
+      #              y = ratio, group = country)) +
+      #   annotate("rect", xmin = as.Date("2020-10-31"), xmax = as.Date("2021-07-31"), ymin = 0, ymax = Inf, alpha = 0.5, fill = grey10k) +
+      #   geom_hline(yintercept = 1, size = 1, linetype = "dotted", color = grey80k) +
+      #   geom_smooth(color = grey20k, size = 1, se = FALSE, alpha = 0.85) +
+      #   geom_point(aes(fill = point_color),
+      #              shape = 21, size = 8, stroke = 0.1) + 
+      #   geom_text(aes(y = ratio, label = ratio), size = 9/.pt, color = "white") +
+      #   scale_fill_identity() +
+      #   new_scale_fill() +
+      #   geom_tile(aes(fill = mot_soh, y = -1.5), color = "white") +
+      #   geom_text(aes(label = paste0(comma((round(mot_soh/1000)), 1), "K"), y = -1.5), size = 7/.pt) +
+      #   scale_fill_si(palette = "scooters", discrete = F, alpha = 0.75) +
+      #   scale_y_continuous() +
+      #   scale_x_date(date_breaks = "1 month", date_labels = "%b%y", limits = c(min(df_all$period), max(df_all$period))) +
+      #   facet_wrap(~country) +
+      #   si_style_ygrid() +
+      #   coord_cartesian(clip = "on") +
+      #   labs(x = NULL, y = NULL, title = "Ratio of TLD stock and treatment target",
+      #        subtitle = "FY21 TX_CURR target compared to months of treatment of TLD stock",
+      #        caption = "Source: PPMR-HIV 2021.10.1, FY21Q4c MSD")+
+      #   theme(legend.position = "none") +
+      #   si_save("Images/tld_ratio_focus.png", scale = 1.6)
+      
+      library(glitr)
+      library(glamr)
+      library(gisr)
+      library(tidyverse)
+      library(gophr)
+      library(scales)
+      library(sf)
+      library(extrafont)
+      library(tidytext)
+      library(ggnewscale)
+      
+      df_all <- read_csv("Dataout/trianguled_sch_mer.csv")
+      
+      df_all %>% write_csv("Dataout/trianguled_sch_mer.csv")
+      
+      
+      df_viz <- df_all %>% 
+        arrange(period) %>%
+        mutate(point_color = ifelse(mot_soh > TX_CURR, "#047491", "#af273d"),
+               date_sort = fct_reorder(pd, period, .desc = FALSE),
+               text_color = ifelse(mot_soh/1000 < 5500, grey90k, "#FFFFFF")) %>% 
+        filter(fy == "2021",
+               country %in% focus_ous,
+               period != "2021-10-31") 
+      
+      
+      min(df_viz$period)
+      max(df_viz$period)
+    
+      
+      df_viz %>%
+        ggplot(aes(x = period,
+                   y = ratio, group = country)) +
+        annotate("rect", xmin = as.Date("2020-10-31"), xmax = as.Date("2021-07-31"), ymin = 0, ymax = Inf, alpha = 0.5, fill = grey10k) +
+        geom_hline(yintercept = 1, size = 1, linetype = "dotted", color = grey80k) +
+        geom_smooth(color = grey20k, size = 1, se = FALSE, alpha = 0.85) +
+        geom_point(aes(fill = point_color),
+                   shape = 21, size = 8, stroke = 0.1) + 
+        geom_text(aes(y = ratio, label = ratio), size = 9/.pt, color = "white") +
+        scale_fill_identity() +
+        new_scale_fill() +
+        geom_tile(aes(fill = mot_soh, y = -1.5), color = "white") +
+        # geom_text(aes(label = paste0(label_number_si()(mot_soh/1000)), y = -1.5, color = text_color), size = 7/.pt) +
+        geom_text(aes(label = paste0(comma((round(mot_soh/1000)), 1), "K"), y = -1.5), size = 7/.pt) +
+        scale_color_identity() +
+        scale_fill_si(palette = "scooters", discrete = F, alpha = 0.75) +
+        scale_y_continuous() +
+        scale_x_date(date_breaks = "1 month", date_labels = "%b%y", limits = c(min(df_viz$period), max(df_viz$period))) +
+        facet_wrap(~country) +
+        si_style_ygrid() +
+        coord_cartesian(clip = "on") +
+        labs(x = NULL, y = NULL, title = "Ratio of TLD+TLE400 stock and TX_CURR target",
+             subtitle = "FY21 TX_CURR target compared to months of treatment of TLD+TLE400 stock on hand at a national level",
+             caption = "Source: PPMR-HIV 2021.10.1, FY21Q4c MSD")+
+        theme(legend.position = "none") +
+        si_save("Images/tld_ratio_focus_v2.png", scale = 1.5)
+        
+      
+      
+      
+      
+      
+      
+      
+      
+      

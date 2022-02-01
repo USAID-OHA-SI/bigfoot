@@ -17,8 +17,10 @@
   # Functions  
     nvp <- c("Nevirapine 50 mg Dispersible Tablet, 30 Tablets",
              "Nevirapine 50 mg Dispersible Tablet, 60 Tablets",
-             "Nevirapine/Lamivudine/Zidovudine 50/30/60 mg Dispersible Tablet, 60 Tablets")  
-  
+             "Nevirapine/Lamivudine/Zidovudine 50/30/60 mg Dispersible Tablet, 60 Tablets")
+    
+    "Nevirapine 50 mg Dispersible Tablet, 30 Tablets"                              
+    "Nevirapine 50 mg Dispersible Tablet, 60 Tablets" 
 
 # LOAD DATA ============================================================================  
 
@@ -70,6 +72,7 @@
     df %>% filter(product_category == "Pediatric ARV") %>% arrange(product) %>%
       distinct(product, regimen_optimized) %>% prinf
     
+    ## NVP stuff
     # look at issuance of not-optimized peds regimens
     
     peds_df <- df_sc %>% 
@@ -87,8 +90,19 @@
       summarise(value = sum(value, na.rm = TRUE)) %>% 
       pivot_wider(names_from = period, values_from = value) %>% 
       write_csv("Dataout/nvp_ami.csv")
-
     
+  
+    #look at NVP issues
+    nvp_ppmr <- df_ppmr %>% 
+      filter(product %in% nvp,
+             indicator == "soh",
+             value > 0) %>% 
+      group_by(country, period) %>% 
+      summarise(value = sum(value, na.rm = TRUE), .groups = "drop") %>%
+      arrange(period) %>% 
+      pivot_wider(names_from = period, values_from = value)
+    
+
 
  # VIZ ============================================================================
 
