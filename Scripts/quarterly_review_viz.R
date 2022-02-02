@@ -329,7 +329,7 @@
         si_style_ygrid() +
         coord_cartesian(clip = "off") 
       
-      # 1/21/22 update for foucs countries
+      ###### 1/21/22 update for foucs countries ########
       
       df_all <- read_csv("Dataout/trianguled_sch_mer.csv")
       
@@ -341,31 +341,7 @@
                country %in% focus_ous,
                period != "2021-10-31")
       
-      #viz
-      # df_viz %>% 
-      #   ggplot(aes(x = period,
-      #              y = ratio, group = country)) +
-      #   annotate("rect", xmin = as.Date("2020-10-31"), xmax = as.Date("2021-07-31"), ymin = 0, ymax = Inf, alpha = 0.5, fill = grey10k) +
-      #   geom_hline(yintercept = 1, size = 1, linetype = "dotted", color = grey80k) +
-      #   geom_smooth(color = grey20k, size = 1, se = FALSE, alpha = 0.85) +
-      #   geom_point(aes(fill = point_color),
-      #              shape = 21, size = 8, stroke = 0.1) + 
-      #   geom_text(aes(y = ratio, label = ratio), size = 9/.pt, color = "white") +
-      #   scale_fill_identity() +
-      #   new_scale_fill() +
-      #   geom_tile(aes(fill = mot_soh, y = -1.5), color = "white") +
-      #   geom_text(aes(label = paste0(comma((round(mot_soh/1000)), 1), "K"), y = -1.5), size = 7/.pt) +
-      #   scale_fill_si(palette = "scooters", discrete = F, alpha = 0.75) +
-      #   scale_y_continuous() +
-      #   scale_x_date(date_breaks = "1 month", date_labels = "%b%y", limits = c(min(df_all$period), max(df_all$period))) +
-      #   facet_wrap(~country) +
-      #   si_style_ygrid() +
-      #   coord_cartesian(clip = "on") +
-      #   labs(x = NULL, y = NULL, title = "Ratio of TLD stock and treatment target",
-      #        subtitle = "FY21 TX_CURR target compared to months of treatment of TLD stock",
-      #        caption = "Source: PPMR-HIV 2021.10.1, FY21Q4c MSD")+
-      #   theme(legend.position = "none") +
-      #   si_save("Images/tld_ratio_focus.png", scale = 1.6)
+     
       
       library(glitr)
       library(glamr)
